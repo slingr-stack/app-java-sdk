@@ -71,6 +71,14 @@ public class SimpleRestClient extends RestClient {
         return super.get(target);
     }
 
+    public Json get(String path, Json params) throws RestException {
+        WebTarget target = getApiTarget().path(path);
+        for (String key : params.keys()) {
+            target.queryParam(key, params.string(key));
+        }
+        return super.get(target);
+    }
+
     public Json post() throws RestException {
         return super.post(null);
     }
