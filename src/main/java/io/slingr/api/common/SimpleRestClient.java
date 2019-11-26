@@ -74,7 +74,7 @@ public class SimpleRestClient extends RestClient {
     public Json get(String path, Json params) throws RestException {
         WebTarget target = getApiTarget().path(path);
         for (String key : params.keys()) {
-            target.queryParam(key, params.string(key));
+            target = target.queryParam(key, params.string(key));
         }
         return super.get(target);
     }
