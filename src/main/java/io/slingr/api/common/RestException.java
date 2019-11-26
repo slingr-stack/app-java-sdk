@@ -1,6 +1,5 @@
 package io.slingr.api.common;
 
-import com.idea2.utils.Json;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 

@@ -1,9 +1,5 @@
 package io.slingr.api.common;
 
-import com.idea2.endpoints.ExchangeParameter;
-import com.idea2.exceptions.NotFoundException;
-import com.idea2.exceptions.WsExceptionFactory;
-import com.idea2.utils.Json;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -417,39 +413,6 @@ public abstract class RestClient {
             } catch (WebApplicationException wae) {
                 Response r = wae.getResponse();
                 String details = null;
-                if (r != null) {
-                    try {
-                        details = r.readEntity(String.class);
-                    } catch (Exception e) {
-                        // do nothing
-                    }
-                    if (StringUtils.isNotBlank(details)) {
-                        final String sDetail = details.toLowerCase().trim();
-                        if (!sDetail.startsWith("<html") && !sDetail.startsWith("<!doctype ")) {
-                            try {
-                                final Json jsonDetail = Json.parse(details);
-                                if (jsonDetail != null && jsonDetail.contains(ExchangeParameter.DATA.getName()) && jsonDetail.json(ExchangeParameter.DATA).is(ExchangeParameter.EXCEPTION_FLAG)) {
-                                    logInfo(decorateLog("Exception on endpoint from [%s %s]", method.name(), uri));
-                                    if (logger.isTraceEnabled()) {
-                                        if (details.length() > 7000) {
-                                            logTrace(decorateLog("Response received from [%s %s]: %s...", method.name(), uri, details.substring(0, 7000)));
-                                        } else {
-                                            logTrace(decorateLog("Response received from [%s %s]: %s", method.name(), uri, details));
-                                        }
-                                    }
-                                    return jsonDetail;
-                                }
-                            } catch (Exception nee) {
-                                //do nothing
-                            }
-                            if (details.length() > 7000) {
-                                logDebug(decorateLog("HTTP Status: [%s], Message: [%s], Content: %s...", r.getStatus(), wae.getMessage(), details.substring(0, 7000)));
-                            } else {
-                                logDebug(decorateLog("HTTP Status: [%s], Message: [%s], Content: %s", r.getStatus(), wae.getMessage(), details));
-                            }
-                        }
-                    }
-                }
                 // these might be retryable status codes according to W3: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
                 if (r != null && (r.getStatus() == 408 || r.getStatus() == 500 || r.getStatus() == 502 || r.getStatus() == 503 || r.getStatus() == 504)) {
                     retryCount++;
@@ -568,14 +531,14 @@ public abstract class RestClient {
             apiHeaders.forEach(invocationBuilder::header);
         }
         final Response res = invocationBuilder.get();
-        if(throwException){
-            if(res == null){
-                throw WsExceptionFactory.getWsExceptionByStatus(400, "Exception when try to download file from application");
+        if (throwException) {
+            if (res == null) {
+                throw new PermanentRestException(RestErrorType.GENERIC_ERROR, "Error downloading file");
             }
-            if(res.getStatus() == 404){
-                throw new NotFoundException(res.readEntity(String.class));
+            if (res.getStatus() == 404){
+                throw new PermanentRestException(RestErrorType.GENERIC_ERROR, "Not found");
             } else if(res.getStatus() >= 400){
-                throw WsExceptionFactory.getWsExceptionByStatus(res.getStatus(), res.readEntity(String.class));
+                throw new PermanentRestException(RestErrorType.API_EXCEPTION, "Error downloading file");
             }
         }
         return res.readEntity(InputStream.class);

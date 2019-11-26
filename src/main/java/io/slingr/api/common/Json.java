@@ -570,8 +570,6 @@ public class Json {
                     value = fromMap((Map<String, Object>) entry.getValue());
                 } else if (Collection.class.isAssignableFrom(entry.getValue().getClass())) {
                     value = fromList((Collection<Object>) entry.getValue());
-                } else if (ObjectId.class.isAssignableFrom(entry.getValue().getClass())) {
-                    value = entry.getValue().toString();
                 } else {
                     value = entry.getValue();
                 }

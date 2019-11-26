@@ -129,22 +129,6 @@ public class ValidationErrors {
         return errors;
     }
 
-    public List<ValidationError> getErrors(LocaleService localeService) {
-        return errors.stream()
-                .map(error -> new ValidationError(error.field, error.fieldLabel, error.code, localeService.translate(error.message, error.params), error.additionalInfo))
-                .collect(Collectors.toList());
-    }
-
-    public ValidationErrors getValidationErrors(LocaleService localeService) {
-        ValidationErrors validationErrors = new ValidationErrors();
-        validationErrors.currentPath = this.currentPath;
-        validationErrors.pathLabel = this.pathLabel;
-        validationErrors.errors = errors.stream()
-                .map(error -> new ValidationError(error.field, error.fieldLabel, error.code, localeService.translate(error.message, error.params), error.additionalInfo))
-                .collect(Collectors.toList());
-        return validationErrors;
-    }
-
     public void addErrors(ValidationErrors errorsToAdd, String prefix) {
         if (errorsToAdd == null || !errorsToAdd.hasErrors()) {
             return;
@@ -210,30 +194,8 @@ public class ValidationErrors {
         return StringUtils.join(errors.stream().map(ValidationError::toString).collect(Collectors.toList()), ", ");
     }
 
-    public String toString(LocaleService localeService) {
-        if (errors == null) {
-            return localeService.translate("exception.message.validation.noErrors");
-        }
-        List<String> errorList = errors.stream().map(error -> (StringUtils.isNotBlank(error.getField()) ? error.getField() : error.getCode())
-                + ": " + localeService.translate(error.getMessage(), error.getParams())).collect(Collectors.toList());
-        return StringUtils.join(errorList, ", ");
-    }
-
-    public String toString(LocaleService localeService, Locale locale) {
-        if (errors == null) {
-            return localeService.translate(locale, "exception.message.validation.noErrors");
-        }
-        List<String> errorList = errors.stream().map(error -> (StringUtils.isNotBlank(error.getField()) ? error.getField() : error.getCode())
-                + ": " + localeService.translate(locale, error.getMessage(), error.getParams())).collect(Collectors.toList());
-        return StringUtils.join(errorList, ", ");
-    }
-
     public Json toJson() {
-        return Json.fromList(errors.stream().map(error -> error.toJson(null, null)).collect(Collectors.toList()));
-    }
-
-    public Json toJson(LocaleService localeService, Locale locale) {
-        return Json.fromList(errors.stream().map(error -> error.toJson(localeService, locale)).collect(Collectors.toList()));
+        return Json.fromList(errors.stream().map(error -> error.toJson()).collect(Collectors.toList()));
     }
 
     public enum ErrorCode {
@@ -332,10 +294,6 @@ public class ValidationErrors {
             return this.params != null && this.params.length > 0;
         }
 
-        public String getTranslatedMessage(LocaleService localeService) {
-            return localeService.translate(this.message, this.params);
-        }
-
         @Override
         public String toString() {
             return StringUtils.isNotBlank(this.field)
@@ -343,7 +301,7 @@ public class ValidationErrors {
                     : this.code + ": " + (this.hasParams() ? String.format(this.message, this.params) : this.message);
         }
 
-        public Json toJson(LocaleService localeService, Locale locale) {
+        public Json toJson() {
             Json json = Json.map();
             if (code != null) {
                 json.set("code", code);
@@ -355,11 +313,7 @@ public class ValidationErrors {
                 json.set("fieldLabel", fieldLabel);
             }
             if (!StringUtils.isBlank(message)) {
-                if (localeService != null && locale != null) {
-                    json.set("message", localeService.translate(locale, message, params));
-                } else {
-                    json.set("message", message);
-                }
+                json.set("message", message);
             }
             if (additionalInfo != null) {
                 json.set("additionalInfo", Json.fromMap(additionalInfo));
